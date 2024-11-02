@@ -10,7 +10,29 @@ from configs.config_data import *
 from main import bot
 import defs.admin_defs
 
+@bot.message_handler(commands=['check_my_post'])
+def check_my_post(message):
+    user_id = message.from_user.id
+    post_info = defs.admin_defs.get_user_post(user_id)
+    if post_info:
+        post_id, media_type, media_ids, caption, queue_position, post_type = post_info
+        defs.admin_defs.send_post_preview(message.chat.id, post_id, media_type, media_ids, caption)
+        
+        # Отправляем информацию о посте
+        status = "Анон" if post_type == 'anon' else "Обычный"
+        info_message = f"Номер в очереди: {queue_position}\nСтатус: {status}"
+        
+        # Создаем клавиатуру
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("Удалить пост", callback_data=f"delete_check_{post_id}"),
+            types.InlineKeyboardButton("Сменить статус", callback_data=f"toggle_check_{post_id}_{queue_position}"),
+            types.InlineKeyboardButton("Отмена", callback_data="cancel_my_post_check")
+        )
 
+        bot.send_message(message.chat.id, info_message, reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, "У вас нет постов в очереди.")
 @bot.message_handler(commands=['add_to_admin'])
 def add_to_admin2(message):
     user_id = message.from_user.id
@@ -19,36 +41,7 @@ def add_to_admin2(message):
     add_to_admin_allowed[user_id]= True
     bot.send_message(message.chat.id, 'Отправь айди админа, его можно узнать в профиле челика в режиме разраба')
     return
-def check_ban(user_id):
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM blocked_users WHERE user_id = ?', (user_id,))
-    if cursor.fetchone():
-        return True
-    return False
-def check_admin(user_id):
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user_id,))
-    if cursor.fetchone():
-        return False
-    return True
-def unban_user(user_id, chat_id):
-    if not user_id.isdigit():
-        bot.send_message(chat_id, 'ID пользователя должен состоять только из цифр.')
-        return
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT * FROM blocked_users WHERE user_id = ?', (user_id,))
-    if cursor.fetchone():
-        cursor.execute('DELETE FROM blocked_users WHERE user_id = ?', (user_id,))
-        conn.commit()
-        bot.send_message(chat_id, f'Пользователь с ID {user_id} был разблокирован.')
-    else:   
-        bot.send_message(chat_id, f'Пользователь с ID {user_id} не найден в заблокированных пользователях.')
-    
-    conn.close()
+
 
 def admin_menu():
     markupp = types.InlineKeyboardMarkup(row_width=2)
@@ -67,7 +60,7 @@ def admin_panel(message):
     if message.chat.id == ADMIN_CHANNEL_ID:
         bot.send_message(message.chat.id, 'Иди в лс админчик')
         return
-    if check_admin(message.from_user.id):
+    if defs.admin_defs.check_admin(message.from_user.id):
         bot.send_message(message.chat.id, 'Вы не администратор')
     else:
         bot.send_message(message.chat.id, 'Административная панель', reply_markup=admin_menu())
@@ -76,7 +69,7 @@ def admin_panel(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    if check_ban(message.from_user.id):
+    if defs.admin_defs.check_ban(message.from_user.id):
         bot.send_message(message.chat.id, 'Вы заблокированы в боте\n\nДля разблокировки свяжитесь с @qwilton или @angryndors!')
         return
     bot.send_message(message.chat.id, f'Привет, чтобы опубликовать пост сначала отправь команду /create_post, после напиши свой пост ОДНИМ сообщением, вместе с ним приложи фотографию/видео.\n\nЕсли все сделано правильно, то он отправиться на модерацию, удачи!\n\nОзнакомьтесь с правилами /rules')
@@ -96,7 +89,7 @@ def create_post(message):
     user_id = message.from_user.id
 
     # Проверка блокировки
-    if check_ban(user_id):
+    if defs.admin_defs.check_ban(user_id):
         bot.send_message(message.chat.id, 'Вы заблокированы в боте\n\nДля разблокировки свяжитесь с @qwilton или @angryndors!')
         return
 
@@ -132,7 +125,7 @@ def handle_message(message):
             bot.send_message(message.chat.id, 'Пост отправлен')
             return
         elif user_id in unban_allowed:
-            unban_user(text, message.chat.id)
+            defs.admin_defs.unban_user(text, message.chat.id)
             del unban_allowed[user_id]
             return
         elif user_id in delete_post_allowed:
@@ -151,7 +144,7 @@ def handle_message(message):
             defs.admin_defs.about_post(text, user_id)
             del about_allowed[user_id]
             return
-        elif check_ban(message.from_user.id):
+        elif defs.admin_defs.check_ban(message.from_user.id):
             return
         bot.send_message(message.chat.id, 'Вы должны использовать команду /create_post перед отправкой поста')
         return

@@ -14,7 +14,7 @@ rej_reasons = {
     'profanity': 'Нецензурная брань',
     'neadecvat': 'Неадекватный пост',
     'selfpost': 'Выкладывание самого себя',
-    'other': 'Иная причина'
+    'other': 'Рофл пост'
 }
 
 album_media = {}

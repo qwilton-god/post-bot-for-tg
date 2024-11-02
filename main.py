@@ -53,17 +53,16 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS queue (
 conn.commit()
 conn.close()
 
-# Импортируем все обработчики
+
 from handlers.handlers import *
 from handlers.callbacks_query import *
 import defs.my_queue
 
 if __name__ == '__main__':
-    # Запускаем планировщик
+
     defs.my_queue.schedule_posts()
     defs.my_queue.check_queue_and_schedule()
-    
-    # Запускаем планировщик в отдельном потоке
+
     scheduler_thread = threading.Thread(target=defs.my_queue.run_scheduler)
     scheduler_thread.daemon = True
     scheduler_thread.start()

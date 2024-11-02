@@ -8,6 +8,36 @@ import defs.my_queue
 from main import bot
 from configs.config_data import *
 import defs.posts
+def check_ban(user_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM blocked_users WHERE user_id = ?', (user_id,))
+    if cursor.fetchone():
+        return True
+    return False
+def check_admin(user_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user_id,))
+    if cursor.fetchone():
+        return False
+    return True
+def unban_user(user_id, chat_id):
+    if not user_id.isdigit():
+        bot.send_message(chat_id, 'ID пользователя должен состоять только из цифр.')
+        return
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM blocked_users WHERE user_id = ?', (user_id,))
+    if cursor.fetchone():
+        cursor.execute('DELETE FROM blocked_users WHERE user_id = ?', (user_id,))
+        conn.commit()
+        bot.send_message(chat_id, f'Пользователь с ID {user_id} был разблокирован.')
+    else:   
+        bot.send_message(chat_id, f'Пользователь с ID {user_id} не найден в заблокированных пользователях.')
+    
+    conn.close()
 def about_post(post_id, user_id):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -260,3 +290,68 @@ def send_from_queue_by_post_id(post_id):
         print("Error connecting to database:", e)
     finally:
         conn.close()
+def get_user_post(user_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.id, p.media_type, p.media_id, p.caption, 
+               (SELECT COUNT(*) FROM queue WHERE post_date <= q.post_date) as queue_position,
+               q.post_type
+        FROM posts p
+        JOIN queue q ON p.id = q.post_id
+        WHERE p.user_id = ?
+        ORDER BY q.post_date ASC
+        LIMIT 1
+    ''', (user_id,))
+    
+    result = cursor.fetchone()
+    conn.close()
+    
+    return result
+
+def send_post_preview(chat_id, post_id, media_type, media_ids, caption):
+    media_ids = media_ids.split(',')
+    if media_type == 'photo':
+        media = [InputMediaPhoto(media_id, caption=caption if i == 0 else None) for i, media_id in enumerate(media_ids)]
+        bot.send_media_group(chat_id, media)
+    elif media_type == 'video':
+        media = [InputMediaVideo(media_id, caption=caption if i == 0 else None) for i, media_id in enumerate(media_ids)]
+        bot.send_media_group(chat_id, media)
+    elif media_type is None:
+        bot.send_message(chat_id, caption)
+def toggle_status_personal(call):
+    post_id = int(call.data.split('_')[2])
+    queue_position = int(call.data.split('_')[3])
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT post_type FROM queue WHERE post_id = ?', (post_id,))
+    post_data = cursor.fetchone()
+
+    if post_data:
+        current_type = post_data[0]
+        new_type = 'anon' if current_type == 'usual' else 'usual'  
+        cursor.execute('UPDATE queue SET post_type = ? WHERE post_id = ?', (new_type, post_id))
+        conn.commit()
+
+        new_status_text = 'Анон' if new_type == 'anon' else 'Обычный'
+
+        cursor.execute('SELECT username, user_id FROM posts WHERE id = ?', (post_id,))
+        user_data = cursor.fetchone()
+
+        if user_data:
+            post_username, post_user_id = user_data
+
+            bot.edit_message_text(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text=f'Номер в очереди: {queue_position}\nСтатус: {new_status_text}',
+                reply_markup=call.message.reply_markup  
+            )
+        else:
+            bot.send_message(call.from_user.id, f'Не удалось получить информацию о пользователе, который создал пост.')
+
+    else:
+        bot.send_message(call.from_user.id, f'Пост {post_id} не найден!')
+
+    conn.close()  

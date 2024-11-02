@@ -24,14 +24,16 @@ def callback_query(call):
 
         if call.data.startswith('approve_'):
             cursor.execute('SELECT * FROM posts WHERE id = ?', (post_id,))
-            if cursor.fetchone():
+            post = cursor.fetchone()
+            if post:
+                author_id = post[5]  
                 cursor.execute('UPDATE posts SET approved = TRUE WHERE id = ?', (post_id,))
-                cursor.execute('INSERT INTO queue (post_id, user_id, username, post_date, post_type) VALUES (?, ?, ?, ?, ?)', 
-                               (post_id, call.from_user.id, call.from_user.username, datetime.datetime.now(), 'usual'))
+                cursor.execute('INSERT INTO queue (post_id, user_id, username, post_date, post_type, author_id) VALUES (?, ?, ?, ?, ?, ?)',  
+                               (post_id, call.from_user.id, call.from_user.username, datetime.datetime.now(), 'usual', author_id))
                 cursor.execute('SELECT user_id FROM posts WHERE id = ?', (post_id,))
                 conn.commit() 
                 author_id = cursor.fetchone()[0]
-                bot.send_message(author_id, f'Ваш пост был одобрен и поставлен в очередь!')
+                bot.send_message(author_id, f'Ваш пост был одобрен и поставлен в очередь!\n\nПодробнее о посте /check_my_post')
                 bot.send_message(ADMIN_CHANNEL_ID, f'Пост {post_id} одобрен не анонимно!')
             else:
                 bot.send_message(call.from_user.id, f'Пост {post_id} не найден!')
@@ -42,21 +44,21 @@ def callback_query(call):
         
         elif call.data.startswith('anon_'):
             cursor.execute('SELECT * FROM posts WHERE id = ?', (post_id,))
-            if cursor.fetchone():
+            post = cursor.fetchone()
+            if post:
+                author_id = post[5]  
                 cursor.execute('UPDATE posts SET approved = TRUE WHERE id = ?', (post_id,))
-                cursor.execute('INSERT INTO queue (post_id, user_id, username, post_date, post_type) VALUES (?, ?, ?, ?, ?)', 
-                               (post_id, call.from_user.id, call.from_user.username, datetime.datetime.now(), 'anon'))
-                cursor.execute('SELECT user_id FROM posts WHERE id = ?', (post_id,))
+                cursor.execute('INSERT INTO queue (post_id, user_id, username, post_date, post_type, author_id) VALUES (?, ?, ?, ?, ?, ?)', 
+                            (post_id, call.from_user.id, call.from_user.username, datetime.datetime.now(), 'anon', author_id))
                 conn.commit() 
-                author_id = cursor.fetchone()[0]
-                bot.send_message(author_id, f'Ваш пост был одобрен и поставлен в очередь!')
+                bot.send_message(author_id, f'Ваш пост был одобрен и поставлен в очередь!\n\nПодробнее о посте/check_my_post')
                 bot.send_message(ADMIN_CHANNEL_ID, f'Пост {post_id} был поставлен в очередь и будет отправлен анонимно!')
             else:
                 bot.send_message(call.from_user.id, f'Пост {post_id} не найден!')
             bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
             conn.close()
             return
-        
+
         
         elif call.data.startswith('reject_'):
             cursor.execute('SELECT * FROM posts WHERE id = ?', (post_id,))
@@ -68,7 +70,7 @@ def callback_query(call):
                     InlineKeyboardButton('Нецензурная брань', callback_data=f'r_reason_{post_id}_profanity'),
                     InlineKeyboardButton('Неадекватный пост', callback_data=f'r_reason_{post_id}_neadecvat'),              
                     InlineKeyboardButton('Выкладывание самого себя', callback_data=f'r_reason_{post_id}_selfpost'),
-                    InlineKeyboardButton('Иная причина', callback_data=f'r_reason_{post_id}_other'),
+                    InlineKeyboardButton('Рофл пост', callback_data=f'r_reason_{post_id}_other'),
                     InlineKeyboardButton('Отмена', callback_data=f'cancel_reject_{post_id}')
                 )
             bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=newmark)
@@ -97,7 +99,6 @@ def callback_query(call):
 
         elif call.data.startswith('cancel_reject_'):
             post_id = call.data.split('_')[2]
-            
             markup = InlineKeyboardMarkup(row_width=2)  
             markup.add(
                 InlineKeyboardButton('Одобрить.', callback_data=f'approve_{post_id}'),
@@ -231,6 +232,19 @@ def callback_query(call):
             return
         elif call.data.startswith('toggle_status_'):
             defs.admin_defs.toggle_status(call)
+            return
+        
+        
+        elif call.data.startswith('delete_check_'):
+            post_id = str(call.data.split('_')[2])
+            defs.admin_defs.delete_post_from_queue(post_id, chat_id=call.message.chat.id)
+            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+            return
+        elif call.data.startswith('toggle_check_'):
+            defs.admin_defs.toggle_status_personal(call)
+            return
+        elif call.data == 'cancel_my_post_check':
+            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
             return
     except ValueError:
         bot.send_message(call.message.chat.id, "Ошибка: неверный формат данных. Пожалуйста, проверьте команду.")
