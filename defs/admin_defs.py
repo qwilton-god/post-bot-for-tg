@@ -160,7 +160,7 @@ def list_blocked(call):
         message = "Список заблокированных пользователей:\n"
         for row in rows:
             user_id, username = row
-            message += f"ID: {user_id}, Пользователь: @{username}\n"
+            message += f"ID: @{user_id}, Пользователь: @{username}\n"
     else:
         message = "Нет заблокированных пользователей."
     

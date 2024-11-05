@@ -1,17 +1,14 @@
-# main.py
 import telebot
 from configs.config import TOKEN, ADMIN_CHANNEL_ID, POST_CHANNEL_ID
 import sqlite3
 import threading
 
-# Создаем экземпляр бота
 bot = telebot.TeleBot(TOKEN)
 
-# Инициализируем базу данных
-conn = sqlite3.connect('database.db')
+conn = sqlite3.connect('post_vn.db')
 cursor = conn.cursor()
 
-# Создаем необходимые таблицы
+
 cursor.execute('''CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY,
     media_type TEXT,
@@ -67,6 +64,5 @@ if __name__ == '__main__':
     scheduler_thread.daemon = True
     scheduler_thread.start()
     
-    # Запускаем бота
     print("Bot started!")
     bot.infinity_polling()

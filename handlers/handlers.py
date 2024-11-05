@@ -10,6 +10,7 @@ from configs.config_data import *
 from main import bot
 import defs.admin_defs
 
+
 @bot.message_handler(commands=['check_my_post'])
 def check_my_post(message):
     user_id = message.from_user.id
