@@ -15,6 +15,13 @@ from configs.config import *
 import defs.my_queue
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
+def check_user_in_queue(user_id):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM queue WHERE user_id = ?', (user_id,))
+    exists = cursor.fetchone() is not None  # Проверяем, есть ли запись
+    conn.close()
+    return exists 
 def send_to_post_channel(post_id):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()

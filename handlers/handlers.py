@@ -7,6 +7,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedia
 from configs.config import TOKEN, ADMIN_CHANNEL_ID, POST_CHANNEL_ID
 import defs.my_queue
 from configs.config_data import *
+import defs.posts
 from main import bot
 import defs.admin_defs
 
@@ -26,8 +27,8 @@ def check_my_post(message):
         # Создаем клавиатуру
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("Удалить пост", callback_data=f"delete_check_{post_id}"),
-            types.InlineKeyboardButton("Сменить статус", callback_data=f"toggle_check_{post_id}_{queue_position}"),
+            types.InlineKeyboardButton("Удалить пост из очереди", callback_data=f"delete_check_{post_id}"),
+            types.InlineKeyboardButton("Сменить статус(Анон/С юзеркой)", callback_data=f"toggle_check_{post_id}_{queue_position}"),
             types.InlineKeyboardButton("Отмена", callback_data="cancel_my_post_check")
         )
 
@@ -59,12 +60,12 @@ def admin_menu():
 @bot.message_handler(commands=['admin_panel'])
 def admin_panel(message):
     if message.chat.id == ADMIN_CHANNEL_ID:
-        bot.send_message(message.chat.id, 'Иди в лс админчик')
+        bot.send_message(message.chat.id, 'Иди в лс админчик.')
         return
     if defs.admin_defs.check_admin(message.from_user.id):
-        bot.send_message(message.chat.id, 'Вы не администратор')
+        bot.send_message(message.chat.id, 'Вы не администратор.')
     else:
-        bot.send_message(message.chat.id, 'Административная панель', reply_markup=admin_menu())
+        bot.send_message(message.chat.id, 'Административная панель:', reply_markup=admin_menu())
 
 
 
@@ -86,7 +87,6 @@ def rules(message):
 
 @bot.message_handler(commands=['create_post'])
 def create_post(message):
-    print('zxc by qwilton')
     user_id = message.from_user.id
 
     # Проверка блокировки
@@ -99,6 +99,9 @@ def create_post(message):
         bot.send_message(message.chat.id, 'Команда /create_post доступна только в личном чате с ботом')
         return
 
+    if defs.posts.check_user_in_queue(user_id):
+        bot.send_message(message.chat.id, 'У вас уже есть посты в очереди, сперва дождитесь пока они будут отправлены, либо удалить их используя /check_my_post')
+        return
     # Проверка наCooldown
     cooldown_time = create_post_cooldown.get(user_id)
     if cooldown_time and cooldown_time > datetime.datetime.now():
