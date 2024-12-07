@@ -59,10 +59,9 @@ def about_post(post_id, user_id):
 
     if post_data and queue_data:
         media_type, media_ids, caption, username, text = post_data
-        post_type = queue_data[0]  # Получаем тип поста из очереди
-        status = 'Анон' if post_type == 'anon' else 'Дефолт'  # Определяем статус поста
+        post_type = queue_data[0]  
+        status = 'Анон' if post_type == 'anon' else 'Дефолт'  
 
-        # Обработка медиа
         media_ids = media_ids.split(',')
         if media_type == 'photo':
             media = [InputMediaPhoto(media_id, caption) for media_id in media_ids]
@@ -73,7 +72,7 @@ def about_post(post_id, user_id):
         elif media_type is None:
             bot.send_message(user_id, text)
 
-        # Создаем разметку с кнопками
+
         markup = InlineKeyboardMarkup(row_width=3)
         markup.add(
             InlineKeyboardButton('Удалить', callback_data=f'about_delete_{post_id}'),

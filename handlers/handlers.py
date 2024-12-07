@@ -270,7 +270,10 @@ def send_to_admin_channel(post_id):
     if post_data:
         media_type, media_ids, caption, username, text, user_id = post_data
         media_ids = media_ids.split(',')
-
+        if username is None or username == "":
+            username_display = "Без юзернейма"
+        else:
+            username_display = f"@{username}"
         if media_type == 'photo':
             media = [InputMediaPhoto(media_id, caption=caption if i == 0 else None) for i, media_id in enumerate(media_ids)]
             try:
@@ -295,4 +298,4 @@ def send_to_admin_channel(post_id):
             InlineKeyboardButton('ЧС.', callback_data=f'block_{post_id}'),
             InlineKeyboardButton('Отклонить.', callback_data=f'reject_{post_id}')
         )
-        bot.send_message(ADMIN_CHANNEL_ID, f'Пост: @{username}, id: {user_id}', reply_markup=markup)
+        bot.send_message(ADMIN_CHANNEL_ID, f'Пост: {username_display}, id: {user_id}', reply_markup=markup)
