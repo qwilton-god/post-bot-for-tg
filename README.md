@@ -41,7 +41,7 @@ Telegram бот для управления постами и публикаци
 ## Установка и запуск
 1. Клонировать репозиторий
 ```bash
-git clone https://github.com/your-username/post_bot.git
+git clone https://github.com/qwilton-god/post-bot-for-tg.git
 cd post_bot
 ```
 
