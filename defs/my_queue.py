@@ -1,17 +1,11 @@
-
 from telebot import types
 import sqlite3
-import datetime
-import json
 import schedule
 import time
 import pytz
-import threading
 import requests
 import defs.posts
-from datetime import datetime as dt
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, InputMediaVideo
-from configs.config import TOKEN, ADMIN_CHANNEL_ID, POST_CHANNEL_ID
+from configs.config_data import DATABASE_NAME
 def make_request(method_url, params):
     retry_count = 0
     max_retries = 5
@@ -32,7 +26,7 @@ def make_request(method_url, params):
 moscow_tz = pytz.timezone('Europe/Moscow')
 def count_posts_in_queue():
     try:
-        conn = sqlite3.connect('database.db')
+        conn = sqlite3.connect(DATABASE_NAME)
         cursor = conn.cursor()
         
         # Выполняем SQL-запрос для подсчета количества постов в очереди

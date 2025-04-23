@@ -72,7 +72,7 @@ def admin_panel(message):
 @bot.message_handler(commands=['start'])
 def start(message):
     if defs.admin_defs.check_ban(message.from_user.id):
-        bot.send_message(message.chat.id, 'Вы заблокированы в боте\n\nДля разблокировки свяжитесь с @qwilton или @angryndors!')
+        bot.send_message(message.chat.id, 'Вы заблокированы в боте\n\nДля разблокировки свяжитесь с ')
         return
     bot.send_message(message.chat.id, f'Привет, чтобы опубликовать пост сначала отправь команду /create_post, после напиши свой пост ОДНИМ сообщением, вместе с ним приложи фотографию/видео.\n\nЕсли все сделано правильно, то он отправиться на модерацию, удачи!\n\nОзнакомьтесь с правилами /rules')
 
@@ -91,7 +91,7 @@ def create_post(message):
 
     # Проверка блокировки
     if defs.admin_defs.check_ban(user_id):
-        bot.send_message(message.chat.id, 'Вы заблокированы в боте\n\nДля разблокировки свяжитесь с @qwilton или @angryndors!')
+        bot.send_message(message.chat.id, 'Вы заблокированы в боте\n\nДля разблокировки свяжитесь с ')
         return
 
     # Проверка типа чата
@@ -254,7 +254,7 @@ def send_media_group(chat_id, media_ids, caption, username):
 def save_post(media_type, media_ids, text, user_id, username, caption):
 
     media_ids = media_ids.split(',')
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('INSERT INTO posts (media_type, media_id, caption, text, user_id, username, post_date) VALUES (?, ?, ?, ?, ?, ?, ?)', 
                    (media_type, ','.join(media_ids), caption, text, user_id, username, datetime.datetime.now()))
@@ -264,7 +264,7 @@ def save_post(media_type, media_ids, text, user_id, username, caption):
     send_to_admin_channel(post_id)
 create_post_allowed = {}
 def send_to_admin_channel(post_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT media_type, media_id, caption, username, text, user_id FROM posts WHERE id = ?', (post_id,))
     post_data = cursor.fetchone()
@@ -302,3 +302,6 @@ def send_to_admin_channel(post_id):
             InlineKeyboardButton('Отклонить.', callback_data=f'reject_{post_id}')
         )
         bot.send_message(ADMIN_CHANNEL_ID, f'Пост: {username_display}, id: {user_id}', reply_markup=markup)
+
+
+

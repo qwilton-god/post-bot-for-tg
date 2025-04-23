@@ -2,28 +2,23 @@
 import telebot
 from telebot import types
 import sqlite3
-import datetime
-import json
-import schedule
 import time
-import pytz
-import threading
-import requests
 from datetime import datetime as dt
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, InputMediaVideo
 from configs.config import *
-import defs.my_queue
+from configs.config_data import DATABASE_NAME
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
+
 def check_user_in_queue(user_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM queue WHERE user_id = ?', (user_id,))
     exists = cursor.fetchone() is not None  # Проверяем, есть ли запись
     conn.close()
     return exists 
 def send_to_post_channel(post_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT media_type, media_id, caption, username, text FROM posts WHERE id = ?', (post_id,))
     post_data = cursor.fetchone()
@@ -49,7 +44,7 @@ def send_to_post_channel(post_id):
 
 def send_from_queue():
     try:
-        conn = sqlite3.connect('database.db')
+        conn = sqlite3.connect(DATABASE_NAME)
         cursor = conn.cursor()
         cursor.execute('SELECT post_id, post_type FROM queue ORDER BY post_date ASC LIMIT 1')
         row = cursor.fetchone()
@@ -99,7 +94,7 @@ def send_from_queue():
     finally:
         conn.close()
 def send_post_usual(post_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT media_type, media_id, caption, username, text FROM posts WHERE id = ?', (post_id,))
     post_data = cursor.fetchone()

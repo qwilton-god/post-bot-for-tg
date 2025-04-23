@@ -9,13 +9,13 @@ from main import bot
 import defs.admin_defs
 import defs.posts
 from configs.config_data import *
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
-
     try:
-        # Проверяем, что данные начинаются с нужной строки и извлекаем post_id
         if call.data.startswith(('approve_', 'anon_', 'reject_', 'send_', 'anon-fast_', 'block_')):
             post_id = int(call.data.split('_')[1])
         else:

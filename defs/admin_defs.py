@@ -9,14 +9,14 @@ from main import bot
 from configs.config_data import *
 import defs.posts
 def check_ban(user_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM blocked_users WHERE user_id = ?', (user_id,))
     if cursor.fetchone():
         return True
     return False
 def check_admin(user_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user_id,))
     if cursor.fetchone():
@@ -26,7 +26,7 @@ def unban_user(user_id, chat_id):
     if not user_id.isdigit():
         bot.send_message(chat_id, 'ID пользователя должен состоять только из цифр.')
         return
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     
     cursor.execute('SELECT * FROM blocked_users WHERE user_id = ?', (user_id,))
@@ -39,7 +39,7 @@ def unban_user(user_id, chat_id):
     
     conn.close()
 def about_post(post_id, user_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     
     # Проверяем, есть ли пост в очереди
@@ -87,7 +87,7 @@ def about_post(post_id, user_id):
 
     conn.close()
 def get_media_type(media_ids):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     media_type = None
     for media_id in media_ids:
@@ -99,7 +99,7 @@ def get_media_type(media_ids):
     return media_type[0] if media_type else None
 def toggle_status(call):
     post_id = int(call.data.split('_')[2])
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
 
     # Получаем текущий статус поста из очереди
@@ -149,7 +149,7 @@ def rufa(user_id):
     else:return
 
 def list_blocked(call):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     
     cursor.execute('SELECT user_id, username FROM blocked_users')
@@ -166,7 +166,7 @@ def list_blocked(call):
     bot.send_message(call.message.chat.id, message)
     conn.close()
 def list_queue(call):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     count = defs.my_queue.count_posts_in_queue()
     cursor.execute('SELECT post_id, user_id FROM queue ORDER BY post_date ASC')
@@ -193,7 +193,7 @@ def add_to_admin(user_id, chat_id):
         bot.send_message(chat_id, 'ID пользователя должен состоять только из цифр.')
         return
 
-    with sqlite3.connect('database.db') as conn:
+    with sqlite3.connect(DATABASE_NAME) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM admins WHERE user_id = ?", (user_id,))
         if cursor.fetchone() is not None:
@@ -207,7 +207,7 @@ def ban_user(user_id, chat_id):
     if not user_id.isdigit():
         bot.send_message(chat_id, 'ID пользователя должен состоять только из цифр.')
         return
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     
     # Проверяем, есть ли пользователь в таблице заблокированных пользователей
@@ -225,7 +225,7 @@ def delete_post_from_queue(post_id, chat_id):
     if not post_id.isdigit(): 
         bot.send_message(chat_id, 'ID пользователя должен состоять только из цифр.') 
         return 
-    conn = sqlite3.connect('database.db') 
+    conn = sqlite3.connect(DATABASE_NAME) 
     cursor = conn.cursor() 
 
     cursor.execute('SELECT * FROM queue WHERE post_id = ? ', (post_id,)) 
@@ -240,7 +240,7 @@ def delete_post_from_queue(post_id, chat_id):
 def send_from_queue_by_post_id(post_id):
     print(post_id)
     try:
-        conn = sqlite3.connect('database.db')
+        conn = sqlite3.connect(DATABASE_NAME)
         cursor = conn.cursor()
         cursor.execute('SELECT post_type FROM queue WHERE post_id = ?', (post_id,))
         row = cursor.fetchone()
@@ -290,7 +290,7 @@ def send_from_queue_by_post_id(post_id):
     finally:
         conn.close()
 def get_user_post(user_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute('''
         SELECT p.id, p.media_type, p.media_id, p.caption, 
@@ -321,7 +321,7 @@ def send_post_preview(chat_id, post_id, media_type, media_ids, caption):
 def toggle_status_personal(call):
     post_id = int(call.data.split('_')[2])
     queue_position = int(call.data.split('_')[3])
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
 
     cursor.execute('SELECT post_type FROM queue WHERE post_id = ?', (post_id,))
@@ -339,8 +339,6 @@ def toggle_status_personal(call):
         user_data = cursor.fetchone()
 
         if user_data:
-            post_username, post_user_id = user_data
-
             bot.edit_message_text(
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,

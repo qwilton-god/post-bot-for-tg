@@ -7,14 +7,17 @@ unban_allowed = {}
 add_to_admin_allowed = {}
 ban_allowed = {}
 about_allowed = {}
-
+delete_request_allowed = {}
 rej_reasons = {
     'adver': 'Реклама',
     'duplicate': 'Дублированный пост',
     'profanity': 'Нецензурная брань',
     'neadecvat': 'Неадекватный пост',
     'selfpost': 'Выкладывание самого себя',
-    'other': 'Рофл пост'
+    'other': 'Иная причина'
 }
 
 album_media = {}
+
+# Имя файла базы данных
+DATABASE_NAME = 'post_bot.db'
